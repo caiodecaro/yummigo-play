@@ -1736,6 +1736,13 @@ html.boot,html.boot body{background:#120A45!important}
   #mbox:has(.setrow) .mbtns{gap:9px;margin-top:10px}
   #mbox:has(.setrow) .mbtns .btn:not(.green){padding-top:8px;padding-bottom:8px}
 }
+
+/* The screens are as tall as the window really is (--vh, set from innerHeight). In Safari on iPhone (iOS 26) 100vh and 100dvh reach under
+   the floating address bar while the window ends above it: the items of a level were hidden under the bar and the board shrank to nothing. */
+#app{min-height:var(--vh,100vh)}
+.tscreen{min-height:var(--vh,100vh)}
+.home5,.tscreen.t7{height:var(--vh,100dvh)}
+.lv8{min-height:var(--vh,100dvh)}
 </style>
 </head>
 <body>
@@ -2246,7 +2253,7 @@ function renderTitle(){tutorStop();G=null;setTrack('menu');setScene(COUNTRIES[jo
       <div class="row2"><button class="btn" id="tShop">🏪 ${t('shop')}</button><button class="btn" id="tSet">⚙️ ${t('settings')}</button></div>
       <button class="btn ghost" id="tHow">❓ ${t('howT')}</button></div>
     
-    <div class="tver">Yummigo · v1.1.2</div></div>`;
+    <div class="tver">Yummigo · v1.1.3</div></div>`;
   const go=(id,f)=>document.getElementById(id).onclick=()=>{sfx('tap');f();};
   go('tPlay',()=>renderMap());go('tShop',()=>openShop(renderTitle));go('tSet',()=>openSettings(renderTitle));
   go('tHow',()=>howTo());
@@ -3200,11 +3207,13 @@ function fitBoard(){const bo=document.getElementById('boosters'),root=document.g
   const over=()=>bo.getBoundingClientRect().bottom+(window.scrollY||0)+8-innerHeight;
   if(over()>1.5){
     const steps=!root?[30]:innerHeight<=700?[38,'tight',34,'tight2',24,'tight3']:[34,'tight',30,'tight2',24,'tight3'];
+    let stuck=false;
     for(const s of steps){
       if(typeof s==='string')root.classList.add(s);
-      else for(let k=0;k<4&&CS>s&&over()>1.5;k++){      /* the largest cells that fit (a second pass only when the first one was a hair short) */
-        G.csCap=Math.max(s,Math.min(CS-1,Math.floor(CS-(over()-1.5)/G.L.rows)));renderGrid();if(root&&root._pb){root._pb='';root.style.paddingBottom='';}}
-      if(over()<=1.5)break;}}
+      else for(let k=0;k<4&&CS>s&&over()>1.5;k++){const was=over();      /* the largest cells that fit (a second pass only when the first one was a hair short) */
+        G.csCap=Math.max(s,Math.min(CS-1,Math.floor(CS-(over()-1.5)/G.L.rows)));renderGrid();if(root&&root._pb){root._pb='';root.style.paddingBottom='';}
+        if(over()>was-0.5){stuck=true;break;}}      /* a smaller board did not bring the items up (the page is taller than the window): shrinking more would not help */
+      if(stuck||over()<=1.5)break;}}
   lv8Ground();}
 function renderQueue(){
   const el=document.getElementById('queue');if(!el)return;
@@ -4478,7 +4487,7 @@ function renderTitle(keep){tutorStop();G=null;setTrack('menu');
     <div class="t7top"><div class="tlogo">Yummi<span>go</span></div><div class="t7head"></div></div>
     <div class="t7ui"><button class="btn green shiny playbig" id="tPlay">▶ ${t('playT')}</button>
       <div class="t7row">${ib('tShop','shop',t('shop'))}${ib('tSet','gear',t('settings'))}${ib('tHow','question',t('howT'))}</div>
-      <div class="tver">Yummigo · v1.1.2</div></div></div>`;
+      <div class="tver">Yummigo · v1.1.3</div></div></div>`;
   const el=document.getElementById('t7'),st=T7={el,wheel:el.querySelector('.t7wheel'),list,idx,home,prev,nbr:{},a:0,busy:false,drag:null};
   t7Plate();t7Layout();
   // the lettering of the buttons arrives a moment after the page (web font): when the name plate or the menu changes height, the street is fitted again
@@ -6618,6 +6627,10 @@ window.YummigoBack=function(){try{
   if(q('#cHome'))return click(q('#cHome'));
   if(q('#playBtn')&&q('#h5')){renderTitle();return true;}
   return false;}catch(e){return false;}};
+
+/* the real height of the window, for the CSS (--vh): Safari's address bar comes and goes */
+(function(){const set=()=>{try{document.documentElement.style.setProperty('--vh',Math.round(window.innerHeight)+'px');}catch(e){}};set();
+  window.addEventListener('resize',set);if(window.visualViewport)window.visualViewport.addEventListener('resize',set);window.addEventListener('orientationchange',()=>setTimeout(set,300));})();
 
 window.addEventListener('resize',()=>{if(G&&document.getElementById('kgrid')){G.csCap=null;renderAll();}});
 document.documentElement.lang=S.lang;
